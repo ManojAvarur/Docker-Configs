@@ -1,0 +1,23 @@
+services:
+  ftps:
+    image: stilliard/pure-ftpd
+    container_name: ftps_server
+    ports:
+      - 21:21
+      - 30000-30009:30000-30009  # Passive port range
+    volumes:
+      - ./data:/home/ftpuser
+      - ./ssl:/etc/ssl/private
+    environment:
+      PUBLICHOST: localhost
+      FTP_USER_NAME: username
+      FTP_USER_PASS: password
+      FTP_USER_HOME: /home/ftpuser
+      ADDED_FLAGS: "--tls=2"  # Enforce TLS
+    restart: always
+    networks:
+      - ftp_network
+
+networks:
+  ftp_network:
+    driver: bridge
