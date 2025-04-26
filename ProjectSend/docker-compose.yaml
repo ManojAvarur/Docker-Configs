@@ -1,0 +1,44 @@
+services:
+  projectsend:
+    image: linuxserver/projectsend:latest
+    container_name: projectsend
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=MST
+      - MAX_UPLOAD=50000
+      # - DB_HOST=mysql
+      # - DB_NAME=projectsend
+      # - DB_USER=projectsend
+      # - DB_PASSWORD=your_secure_password
+    volumes:
+      - ./data:/data
+      - ./config:/config
+    ports:
+      - "8080:80"
+    depends_on:
+      - mysql
+    restart: always
+    networks:
+      - projectsend_network
+
+  mysql:
+    image: mysql:8.0
+    container_name: projectsend_mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=47MnU0PIHaE80ujz&y3zA@u
+      - MYSQL_DATABASE=projectsend
+      - MYSQL_USER=projectsend
+      - MYSQL_PASSWORD=71?L]1Ax1W6oGY
+    ports:
+      - 3306:3306
+    volumes:
+      - ./mysql_data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password
+    restart: unless-stopped
+    networks:
+      - projectsend_network
+
+networks:
+  projectsend_network:
+    driver: bridge

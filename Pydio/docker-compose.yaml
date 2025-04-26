@@ -1,0 +1,40 @@
+services:
+  mysql:
+    image: mysql:8
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    command: [mysqld, --character-set-server=utf8mb4, --collation-server=utf8mb4_unicode_ci]
+    # ports:
+    #   - 3306:3306
+    # volumes:
+      # - ${CWD}/mysql:/var/lib/mysql:rw
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      retries: 500
+      start_period: 30s
+      timeout: 5s
+    networks:
+      - pydiocells
+
+  cells:
+    image: pydio/cells:latest
+    restart: unless-stopped
+    ports: 
+      - ${PORT}:8080
+    volumes:
+      - ${CWD}/cells:/var/cells:rw
+      - ${CWD}/data:/var/cells/data:rw
+    networks:
+      - pydiocells
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+networks:
+  pydiocells:
+    name: pydiocells
