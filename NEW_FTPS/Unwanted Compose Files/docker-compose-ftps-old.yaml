@@ -1,0 +1,21 @@
+services:
+  ftps:
+    image: stilliard/pure-ftpd
+    container_name: ftps-server
+    ports:
+      - "21:21"                     # FTP control port
+      - "30000-30009:30000-30009"   # Passive ports
+    volumes:
+      - ./data:/home/ftpusers                           # Local directory mapped to FTP server's directory
+      - ./ssl:/etc/ssl                                  # Mount SSL certificates into the container (make sure to place .crt and .key files here)
+      - ./pure-ftpd.conf:/etc/pure-ftpd/pure-ftpd.conf  # Optional: Custom configuration (see below)
+    environment:
+      - PUBLICHOST=localhost                    # Change this if needed
+      - FTP_USER=username                       # FTP username
+      - FTP_PASS=password                       # FTP password
+      - FTP_UID=1000                            # User ID for FTP
+      - FTP_GID=1000                            # Group ID for FTP
+      - FTP_TLS=YES                             # Enable FTPS (FTP over TLS/SSL)
+      - TLS_CERT_FILE=/etc/ssl/ftps-server.crt  # Path to SSL certificate
+      - TLS_KEY_FILE=/etc/ssl/ftps-server.key   # Path to SSL key
+    restart: unless-stopped

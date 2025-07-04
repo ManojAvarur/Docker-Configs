@@ -1,0 +1,11 @@
+services:
+  sftp:
+    image: atmoz/sftp
+    container_name: sftp-server
+    ports:
+      - "2222:22"
+#    volumes:
+#      - ./data:/home/user/uploads
+    environment:
+      - SFTP_USERS=username:password:1000
+    restart: always
