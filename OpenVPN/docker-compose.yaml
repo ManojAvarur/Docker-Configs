@@ -1,0 +1,16 @@
+services:
+  openvpn-as:
+    image: openvpn/openvpn-as
+    container_name: openvpn
+    restart: unless-stopped
+    ports:
+      - "943:943"
+      - "443:443"
+      - "1194:1194/udp"
+    volumes:
+      - /home/user/Documents/Docker/Open-VPN:/openvpn
+    cap_add:
+      - MKNOD
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun
