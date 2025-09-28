@@ -3,15 +3,15 @@ services:
     image: stilliard/pure-ftpd:hardened
     container_name: ftps_server
     ports:
-      - "21:21"
-      - "30000-30009:30000-30009"
+      - "2121:21"
+      - "30000-30100:30000-30100"
     volumes:
       - ./data:/home/ftpuser
       - ./ssl:/etc/ssl/private
+    env_file:
+      - .env
     environment:
       - PUBLICHOST=localhost
-      - FTP_USER_NAME=username
-      - FTP_USER_PASS=password
       - FTP_USER_HOME=/home/ftpuser
       - ADDED_FLAGS=-O w3c:/var/log/pure-ftpd/transfer.log
 
@@ -19,16 +19,36 @@ services:
       - PURE_FTPD_TLS=2  # 1 = allow both encrypted and unencrypted connections, 2 = force encrypted connections
 
       # Passive mode settings
-      - FTP_PASSIVE_PORTS=30000:30009
+      - FTP_PASSIVE_PORTS=30000:30100
 
       # Other security settings
-      - MAX_CLIENTS=2
-      - MAX_CONNECTIONS_PER_IP=5
-
-    restart: always
+      - MAX_CLIENTS=10
+      - MAX_CONNECTIONS_PER_IP=10
+    restart: no
     networks:
       - ftp_network
 
 networks:
   ftp_network:
     driver: bridge
+
+
+#docker run \
+ # --name ftps_server_run \
+#  --rm \
+#  -it \
+#  -p 2121:21 \
+ # -p 30000-30100:30000-30100 \
+  #-v ./data:/home/ftpuser \
+#  -v ./ssl:/etc/ssl/private \
+#  -e PUBLICHOST=localhost \
+#  -e FTP_USER_NAME=test \
+#  -e FTP_USER_PASS=test \
+#  -e FTP_USER_HOME=/home/ftpuser \
+#  -e PURE_FTPD_TLS=2 \
+#  -e ADDED_FLAGS="-O w3c:/var/log/pure-ftpd/transfer.log" \
+#  -e FTP_PASSIVE_PORTS=30000:30100 \
+#  -e MAX_CLIENTS=10 \
+#  -e MAX_CONNECTIONS_PER_IP=10 \
+#  --restart no \
+#  stilliard/pure-ftpd:hardened
