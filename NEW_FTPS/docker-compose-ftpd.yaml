@@ -2,31 +2,20 @@ services:
   ftps:
     image: stilliard/pure-ftpd:hardened
     container_name: ftps_server
-    # command: >
-    #   bash -l -c "
-    #     set -a && source /home/.env && set +a &&
-    #     mkdir -p /etc/ssl/private && 
-    #     cp /home/gen_ssl_cert.bash /etc/ssl/private/gen_ssl_cert.bash &&
-    #     cd /etc/ssl/private && 
-    #     chmod +x ./gen_ssl_cert.bash && 
-    #     bash ./gen_ssl_cert.bash
-    #   "
     ports:
       - "2121:21"
       - "30000-30100:30000-30100"
     volumes:
       - ./data:/home/ftpuser
       - ./ssl:/etc/ssl/private
-      # - ./.env:/home/.env
-      # - ./gen_ssl_cert.bash:/home/gen_ssl_cert.bash
+    env_file:
+      - .env
     environment:
       - PUBLICHOST=localhost
-      - FTP_USER_NAME=${USER_NAME}
-      - FTP_USER_PASS=${USER_PASS}
       - FTP_USER_HOME=/home/ftpuser
-      - ADDED_FLAGS=-O w3c:/var/log/pure-ftpd/transfer.log
+      - ADDED_FLAGS=--tls=2
 
-      # SSL/TLS Configuration
+      # SSL/TLS Configuration --------- WRONG
       - PURE_FTPD_TLS=2  # 1 = allow both encrypted and unencrypted connections, 2 = force encrypted connections
 
       # Passive mode settings
@@ -34,8 +23,8 @@ services:
 
       # Other security settings
       - MAX_CLIENTS=10
-      - MAX_CONNECTIONS_PER_IP=15
-    restart: always
+      - MAX_CONNECTIONS_PER_IP=10
+    restart: no
     networks:
       - ftp_network
 

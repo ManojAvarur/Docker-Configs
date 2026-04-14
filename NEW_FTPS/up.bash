@@ -18,6 +18,6 @@ fi
 
 echo -e "\nStarting up FTP server...\n";
 
-docker compose -f docker-compose-ftpd.yaml up --build
+# docker compose -f docker-compose-ftpd.yaml up --build
 
 echo -e "\n ----- FTPS Server Started -----\n"
