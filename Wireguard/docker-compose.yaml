@@ -1,0 +1,18 @@
+---
+services:
+  wireguard:
+    image: lscr.io/linuxserver/wireguard:latest
+    container_name: wireguard
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE #optional
+    env_file:
+      - .env
+    volumes:
+      - ~/Desktop/Docker/Wireguard/config:/config
+      - ~/Desktop/Docker/Wireguard/modules:/lib/modules #optional
+    ports:
+      - 51820:51820/udp
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+    restart: unless-stopped
