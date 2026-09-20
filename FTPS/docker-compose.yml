@@ -1,0 +1,21 @@
+services:
+  ftps:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ftps-server:latest
+    container_name: ftps
+    env_file:
+      - .env
+    ports:
+      - "2121:21"
+      - "30000-30100:30000-30100"
+    volumes:
+      - ~/Desktop/Docker/FTPS:/ftp
+    restart: no
+    networks:
+      - ftp_network
+
+networks:
+  ftp_network:
+    driver: bridge
