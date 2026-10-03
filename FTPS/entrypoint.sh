@@ -9,7 +9,8 @@ openssl req -x509 -nodes -days 1 -newkey rsa:2048 \
     -subj "/CN=ftps"
 
 if ! id "${FTP_USER}" >/dev/null 2>&1; then
-    useradd -d /ftp "${FTP_USER}"
+    groupadd -g "${PGID:-1000}" "${FTP_USER}"
+    useradd -d /ftp -u "${PUID:-1000}" -g "${PGID:-1000}" "${FTP_USER}"
 fi
 echo "${FTP_USER}:${FTP_PASS}" | chpasswd
 echo "${FTP_USER}" > /etc/vsftpd.userlist
