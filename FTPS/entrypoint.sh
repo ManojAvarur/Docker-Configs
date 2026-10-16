@@ -13,13 +13,17 @@ if ! getent group "${PGID:-1000}" >/dev/null 2>&1; then
 fi
 
 if ! id "${FTP_USER}" >/dev/null 2>&1; then
-    useradd -d /ftp -u "${PUID:-1000}" -g "${PGID:-1000}" "${FTP_USER}"
+    if getent passwd "${PUID:-1000}" >/dev/null 2>&1; then
+        useradd -d /ftp -g "${PGID:-1000}" "${FTP_USER}"
+    else
+        useradd -d /ftp -u "${PUID:-1000}" -g "${PGID:-1000}" "${FTP_USER}"
+    fi
 fi
 echo "${FTP_USER}:${FTP_PASS}" | chpasswd
 echo "${FTP_USER}" > /etc/vsftpd.userlist
 
 mkdir -p /ftp
-chown "${FTP_USER}:${FTP_USER}" /ftp
+chown "${FTP_USER}:${PGID:-1000}" /ftp
 
 touch /var/log/vsftpd.log
 /usr/sbin/vsftpd /etc/vsftpd.conf &
