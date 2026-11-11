@@ -85,12 +85,33 @@ warn_if_claude_not_logged_in() {
   log "Run: docker compose run --rm --entrypoint /home/node/.local/bin/claude openclaw-cli auth login"
 }
 
+configure_browser_profile() {
+  # Attach OpenClaw to the external stateful Chrome sidecar (compose service "chrome").
+  # attachOnly: OpenClaw must not launch its own browser; the sidecar owns the profile.
+  # 9223 is the nginx relay on the compose network (9222 is loopback-only inside the chrome container).
+  cdp_url="${OPENCLAW_CHROME_CDP_URL:-http://chrome:9223}"
+  log "Configuring browser profile 'gmail' -> ${cdp_url} (attachOnly)..."
+  if ! node dist/index.js config set browser.profiles.gmail.cdpUrl "${cdp_url}"; then
+    log "Could not set browser.profiles.gmail.cdpUrl; continuing."
+    return 0
+  fi
+  if ! node dist/index.js config set browser.profiles.gmail.attachOnly true; then
+    log "Could not set browser.profiles.gmail.attachOnly; continuing."
+  fi
+  # The SSRF guard blocks private/Docker-internal addresses by default. Allow only the
+  # compose hostname of the Chrome sidecar, not private networks in general.
+  if ! node dist/index.js config set browser.ssrfPolicy.allowedHostnames '["chrome"]'; then
+    log "Could not set browser.ssrfPolicy.allowedHostnames; remote CDP will be blocked."
+  fi
+}
+
 if is_gateway_command "$@"; then
   require_anthropic_setup_token
   ensure_gateway_mode
   install_claude_cli_if_missing
   configure_anthropic_setup_token
   configure_telegram_if_present
+  configure_browser_profile
   warn_if_claude_not_logged_in
 fi
 

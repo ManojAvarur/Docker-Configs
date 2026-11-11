@@ -56,6 +56,10 @@ services:
       - no-new-privileges:true
     extra_hosts:
       - "host.docker.internal:host-gateway"   # reach host-side Ollama / LM Studio
+    networks:
+      default: {}
+      browser:
+        ipv4_address: 172.28.0.3              # the only client allowed to reach Chrome CDP
     init: true
     restart: unless-stopped
     healthcheck:
@@ -108,6 +112,41 @@ services:
     depends_on:
       - openclaw-gateway
 
+  # Stateful Brave browser: cookies/logins persist in the chrome-profile volume.
+  # CDP (DevTools) is NOT published to the host. It is reachable only from the
+  # gateway, on the dedicated "browser" network (nginx allows 172.28.0.3 only).
+  # noVNC for manual sign-in (localhost only): http://127.0.0.1:${CHROME_NOVNC_PORT:-6080}/vnc.html
+  chrome:
+    build:
+      context: ./docker/chrome
+      dockerfile: Dockerfile
+    image: ${CHROME_IMAGE:-openclaw-chrome:local}
+    container_name: openclaw-chrome
+    environment:
+      TZ: ${OPENCLAW_TZ:-UTC}
+      CHROME_PROFILE_DIR: /data/chrome-profile
+      CHROME_CDP_PORT: "9222"
+      NOVNC_PORT: "6080"
+    volumes:
+      - chrome-profile:/data/chrome-profile
+    ports:
+      - "127.0.0.1:${CHROME_NOVNC_PORT:-6080}:6080"  # noVNC GUI - localhost only
+    networks:
+      browser:
+        ipv4_address: 172.28.0.2
+    shm_size: "1gb"
+    init: true
+    restart: unless-stopped
+
 volumes:
   openclaw-home:
     name: ${OPENCLAW_HOME_VOLUME_NAME:-openclaw_home}
+  chrome-profile:
+    name: ${CHROME_PROFILE_VOLUME_NAME:-openclaw_chrome_profile}
+
+networks:
+  browser:
+    name: openclaw_browser
+    ipam:
+      config:
+        - subnet: 172.28.0.0/24
