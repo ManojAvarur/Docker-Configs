@@ -90,19 +90,64 @@ configure_browser_profile() {
   # attachOnly: OpenClaw must not launch its own browser; the sidecar owns the profile.
   # 9223 is the nginx relay on the compose network (9222 is loopback-only inside the chrome container).
   cdp_url="${OPENCLAW_CHROME_CDP_URL:-http://chrome:9223}"
-  log "Configuring browser profile 'gmail' -> ${cdp_url} (attachOnly)..."
-  if ! node dist/index.js config set browser.profiles.gmail.cdpUrl "${cdp_url}"; then
-    log "Could not set browser.profiles.gmail.cdpUrl; continuing."
+  log "Configuring browser profile 'openclaw' -> ${cdp_url} (attachOnly)..."
+  if ! node dist/index.js config set browser.profiles.openclaw.cdpUrl "${cdp_url}"; then
+    log "Could not set browser.profiles.openclaw.cdpUrl; continuing."
     return 0
   fi
-  if ! node dist/index.js config set browser.profiles.gmail.attachOnly true; then
-    log "Could not set browser.profiles.gmail.attachOnly; continuing."
+  if ! node dist/index.js config set browser.profiles.openclaw.attachOnly true; then
+    log "Could not set browser.profiles.openclaw.attachOnly; continuing."
   fi
   # The SSRF guard blocks private/Docker-internal addresses by default. Allow only the
   # compose hostname of the Chrome sidecar, not private networks in general.
   if ! node dist/index.js config set browser.ssrfPolicy.allowedHostnames '["chrome"]'; then
     log "Could not set browser.ssrfPolicy.allowedHostnames; remote CDP will be blocked."
   fi
+}
+
+inform_agent_about_browser() {
+  # Tell the agent what the attached browser looks like (fullscreen, fixed size) so
+  # its screenshots and click coordinates line up. The block between the markers is
+  # regenerated on every start, so edits inside it are overwritten; text outside is kept.
+  workspace="${OPENCLAW_WORKSPACE_DIR:-/home/node/.openclaw/workspace}"
+  display_size="${OPENCLAW_BROWSER_DISPLAY:-1440x900}"
+  target="${workspace}/TOOLS.md"
+  begin_marker="<!-- browser-display:begin -->"
+  end_marker="<!-- browser-display:end -->"
+
+  log "Writing browser display note to ${target}..."
+  if ! mkdir -p "${workspace}"; then
+    log "Could not create ${workspace}; skipping browser display note."
+    return 0
+  fi
+
+  tmp="${target}.tmp"
+  if [ -f "${target}" ]; then
+    if ! sed "/${begin_marker}/,/${end_marker}/d" "${target}" > "${tmp}"; then
+      log "Could not read ${target}; skipping browser display note."
+      rm -f "${tmp}"
+      return 0
+    fi
+  else
+    : > "${tmp}"
+  fi
+
+  if ! cat >> "${tmp}" <<EOF
+${begin_marker}
+## Browser (Chrome sidecar)
+
+- The browser is a headful Brave instance running fullscreen on a virtual display of ${display_size} pixels.
+- Screenshots and click coordinates should use that ${display_size} frame. The window already fills the screen, so do not resize or maximize it.
+- The browser keeps its cookies and logins between restarts.
+${end_marker}
+EOF
+  then
+    log "Could not write ${tmp}; skipping browser display note."
+    rm -f "${tmp}"
+    return 0
+  fi
+
+  mv "${tmp}" "${target}" || log "Could not replace ${target}; browser display note not saved."
 }
 
 if is_gateway_command "$@"; then
@@ -112,6 +157,7 @@ if is_gateway_command "$@"; then
   configure_anthropic_setup_token
   configure_telegram_if_present
   configure_browser_profile
+  inform_agent_about_browser
   warn_if_claude_not_logged_in
 fi
 

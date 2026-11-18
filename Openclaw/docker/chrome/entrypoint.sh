@@ -67,7 +67,13 @@ NGINX
 log "Starting CDP relay 0.0.0.0:9223 -> 127.0.0.1:${CHROME_CDP_PORT} (nginx)..."
 nginx -c /tmp/nginx-cdp.conf -g 'daemon off;' &
 
-log "Starting Brave with profile ${CHROME_PROFILE_DIR} (CDP on ${CHROME_CDP_PORT})..."
+# Derive width/height from SCREEN_GEOMETRY (WxHxDepth) so the browser fills the
+# virtual display. There is no window manager in this container, so Brave is told
+# its exact size and position explicitly; --start-fullscreen covers the rest.
+SCREEN_W="${SCREEN_GEOMETRY%%x*}"
+SCREEN_H="$(echo "${SCREEN_GEOMETRY}" | cut -dx -f2)"
+
+log "Starting Brave with profile ${CHROME_PROFILE_DIR} (CDP on ${CHROME_CDP_PORT}, ${SCREEN_W}x${SCREEN_H} fullscreen)..."
 exec brave-browser \
   --no-sandbox \
   --disable-dev-shm-usage \
@@ -79,4 +85,7 @@ exec brave-browser \
   --remote-debugging-address=0.0.0.0 \
   --remote-debugging-port="${CHROME_CDP_PORT}" \
   --remote-allow-origins=* \
+  --window-position=0,0 \
+  --window-size="${SCREEN_W},${SCREEN_H}" \
+  --start-fullscreen \
   about:blank
