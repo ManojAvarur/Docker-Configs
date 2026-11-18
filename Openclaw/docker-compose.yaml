@@ -14,8 +14,7 @@ services:
     image: ${OPENCLAW_IMAGE:-openclaw-custom:latest}
     container_name: openclaw-gateway
     env_file:
-      - path: .env                 # all provider keys, token, port, etc. come from here
-        required: false
+      - .env                       # all provider keys, token, port, etc. come from here
     environment:
       HOME: /home/node
       OPENCLAW_HOME: /home/node
@@ -82,8 +81,7 @@ services:
     container_name: openclaw-cli
     network_mode: "service:openclaw-gateway"   # shares gateway's network namespace
     env_file:
-      - path: .env
-        required: false
+      - .env
     environment:
       HOME: /home/node
       OPENCLAW_HOME: /home/node
